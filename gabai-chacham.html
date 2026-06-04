@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>גבאי חכם — ניהול עליות לתורה</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e8e8f0; font-family: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif; }
+  input, select, button { font-family: inherit; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #1a1d27; }
+  ::-webkit-scrollbar-thumb { background: #2e3250; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+const STORAGE_KEY = "beit_knesset_v1";
+const ROLES = { KOHEN: "כהן", LEVI: "לוי", ISRAEL: "ישראל" };
+const ALIYOT = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שביעי", "מפטיר"];
+const KIBBUDIM = ["פתיחת היכל", "הוצאת ספר תורה", "הגבהה"];
+
+const getShabbatId = (date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = (6 - day + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split("T")[0];
+};
+
+const todayShabbat = () => getShabbatId(new Date());
+
+const hebrewDate = (iso) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString("he-IL", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+};
+
+const initStorage = () => ({ members: [], shabbatot: {}, nextMemberId: 1 });
+
+const loadData = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : initStorage();
+  } catch { return initStorage(); }
+};
+
+const saveData = (data) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+function computeScores(members, shabbatot, currentShabbatId, presentIds) {
+  const allShabbatIds = Object.keys(shabbatot).sort();
+  const prevShabbatId = allShabbatIds.filter(s => s < currentShabbatId).slice(-1)[0];
+  const scores = {};
+
+  for (const id of presentIds) {
+    const member = members.find(m => m.id === id);
+    if (!member) continue;
+    let totalAliyot = 0, totalKibbudim = 0, lastAliyaShabbat = null, lastKibbud = null, shabbatAttended = 0;
+
+    for (const sid of allShabbatIds) {
+      if (sid >= currentShabbatId) continue;
+      const sh = shabbatot[sid];
+      if (!sh) continue;
+      const wasPresent = (sh.present || []).includes(id) || (sh.guests || []).some(g => g.id === id);
+      if (!wasPresent) continue;
+      shabbatAttended++;
+      const actual = sh.actual || {};
+      for (const role of ALIYOT) { if (actual[role] === id) { totalAliyot++; lastAliyaShabbat = sid; } }
+      for (const k of KIBBUDIM) { if (actual[k] === id) { totalKibbudim++; lastKibbud = sid; } }
+    }
+
+    const assignedLastShabbat = prevShabbatId
+      ? ALIYOT.some(r => (shabbatot[prevShabbatId]?.actual || {})[r] === id)
+      : false;
+
+    const aliyaRate = shabbatAttended > 0 ? totalAliyot / shabbatAttended : 0;
+    const kibbudRate = shabbatAttended > 0 ? totalKibbudim / shabbatAttended : 0;
+    const weeksSinceLast = lastAliyaShabbat
+      ? allShabbatIds.filter(s => s > lastAliyaShabbat && s < currentShabbatId).length + 1 : 99;
+    const weeksSinceLastKibbud = lastKibbud
+      ? allShabbatIds.filter(s => s > lastKibbud && s < currentShabbatId).length + 1 : 99;
+
+    scores[id] = {
+      aliyaScore: weeksSinceLast * 10 - aliyaRate * 5,
+      kibbudScore: weeksSinceLastKibbud * 10 - kibbudRate * 5,
+      blockedAliya: assignedLastShabbat,
+      totalAliyot, totalKibbudim, shabbatAttended,
+    };
+  }
+  return scores;
+}
+
+function generateSuggestion(members, shabbatot, currentShabbatId, presentIds, guestIds, manualLocks) {
+  const allPresent = [...presentIds, ...guestIds];
+  const scores = computeScores(members, shabbatot, currentShabbatId, allPresent);
+  const getMember = id => members.find(m => m.id === id) || { role: ROLES.ISRAEL, knowsHaftara: false };
+
+  const sortedForAliya = [...allPresent]
+    .filter(id => !scores[id]?.blockedAliya)
+    .sort((a, b) => (scores[b]?.aliyaScore || 0) - (scores[a]?.aliyaScore || 0));
+
+  const sortedForKibbud = [...allPresent]
+    .sort((a, b) => (scores[b]?.kibbudScore || 0) - (scores[a]?.kibbudScore || 0));
+
+  const assignment = { ...manualLocks };
+  const assigned = new Set(Object.values(manualLocks).filter(Boolean));
+
+  const assign = (role, candidates) => {
+    if (assignment[role]) return;
+    for (const id of candidates) {
+      if (!assigned.has(id)) { assignment[role] = id; assigned.add(id); return; }
+    }
+  };
+
+  const kohanim = sortedForAliya.filter(id => getMember(id).role === ROLES.KOHEN);
+  assign("ראשון", kohanim);
+  const leviim = sortedForAliya.filter(id => getMember(id).role === ROLES.LEVI);
+  assign("שני", leviim);
+  const maftirCandidates = sortedForAliya.filter(id => getMember(id).knowsHaftara);
+  assign("מפטיר", maftirCandidates);
+  for (const role of ["שלישי", "רביעי", "חמישי", "שישי", "שביעי"]) assign(role, sortedForAliya);
+
+  const israelFirst = sortedForKibbud.filter(id => getMember(id).role === ROLES.ISRAEL);
+  const kibbudAll = [...israelFirst, ...sortedForKibbud.filter(id => getMember(id).role !== ROLES.ISRAEL)];
+  for (const k of KIBBUDIM) assign(k, kibbudAll);
+
+  const reserves = sortedForAliya.filter(id => !assigned.has(id)).slice(0, 3);
+  return { assignment, reserves, scores };
+}
+
+const C = {
+  bg: "#0f1117", surface: "#1a1d27", surface2: "#22263a", border: "#2e3250",
+  gold: "#d4a843", goldLight: "#f0c96e", blue: "#4a90d9", green: "#27ae60",
+  red: "#e74c3c", text: "#e8e8f0", muted: "#8890aa",
+};
+
+const s = {
+  app: { minHeight: "100vh", background: C.bg, color: C.text, maxWidth: 680, margin: "0 auto" },
+  header: { background: "linear-gradient(135deg,#1a1d27,#22263a)", borderBottom: `2px solid ${C.gold}`, padding: "16px 20px", position: "sticky", top: 0, zIndex: 100 },
+  headerInner: { display: "flex", alignItems: "center", gap: 12 },
+  logo: { fontSize: 28, color: C.gold },
+  title: { margin: 0, fontSize: 22, fontWeight: 800, color: C.goldLight, letterSpacing: 1 },
+  subtitle: { fontSize: 12, color: C.muted, marginRight: "auto" },
+  nav: { display: "flex", background: C.surface, borderBottom: `1px solid ${C.border}`, overflowX: "auto" },
+  navBtn: { flex: 1, minWidth: 80, padding: "12px 8px", background: "none", border: "none", color: C.muted, fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", borderBottom: "2px solid transparent" },
+  navBtnActive: { color: C.gold, borderBottom: `2px solid ${C.gold}` },
+  main: { padding: "16px 12px 40px" },
+  tabContent: { display: "flex", flexDirection: "column", gap: 14 },
+  card: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px" },
+  cardTitle: { fontSize: 13, fontWeight: 700, color: C.gold, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12, borderBottom: `1px solid ${C.border}`, paddingBottom: 8 },
+  input: { background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, padding: "8px 12px", fontSize: 14, width: "100%", outline: "none" },
+  select: { background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text, padding: "8px 10px", fontSize: 14, outline: "none" },
+  selectSm: { background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, padding: "4px 8px", fontSize: 13, outline: "none", flex: 1 },
+  btnPrimary: { background: C.gold, color: "#000", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, fontSize: 14, cursor: "pointer" },
+  btnSecondary: { background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 16px", fontSize: 14, cursor: "pointer" },
+  btnDanger: { background: "transparent", color: C.red, border: "none", cursor: "pointer", fontSize: 16, padding: "2px 6px" },
+  btnEdit: { background: "transparent", color: C.blue, border: "none", cursor: "pointer", fontSize: 15, padding: "2px 6px" },
+  btnBig: { background: `linear-gradient(135deg,${C.gold},${C.goldLight})`, color: "#000", border: "none", borderRadius: 12, padding: 14, fontWeight: 800, fontSize: 16, cursor: "pointer", width: "100%" },
+  row: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" },
+  checkLabel: { display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: C.muted, cursor: "pointer" },
+  memberGrid: { display: "flex", flexWrap: "wrap", gap: 8 },
+  memberChip: { background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 20, color: C.muted, padding: "6px 12px", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 },
+  memberChipActive: { background: "#2a3a1a", border: `1px solid ${C.green}`, color: C.text },
+  roleTag: role => ({ display: "inline-block", fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 10, background: role === ROLES.KOHEN ? "#3a1a1a" : role === ROLES.LEVI ? "#1a1a3a" : "#1a2a1a", color: role === ROLES.KOHEN ? "#e57373" : role === ROLES.LEVI ? "#64b5f6" : "#81c784" }),
+  haftaraTag: { fontSize: 10, background: "#3a2a00", color: C.gold, borderRadius: 8, padding: "1px 5px", fontWeight: 700 },
+  guestRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderTop: `1px solid ${C.border}`, fontSize: 13 },
+  assignmentGrid: { display: "flex", gap: 12, flexWrap: "wrap" },
+  assignSection: { flex: 1, minWidth: 200 },
+  sectionLabel: { fontSize: 12, color: C.gold, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" },
+  assignRow: { display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: `1px solid ${C.border}` },
+  assignRole: { fontSize: 13, color: C.muted, minWidth: 80, flexShrink: 0 },
+  assignName: { fontSize: 13, color: C.text, cursor: "pointer", flex: 1 },
+  reserves: { marginTop: 10, padding: "8px 12px", background: C.surface2, borderRadius: 8, fontSize: 13, color: C.muted, border: `1px dashed ${C.border}` },
+  memberRow: { display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${C.border}` },
+  shabbatPicker: { display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 },
+  shabbatBtn: { background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, color: C.muted, padding: "8px 12px", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", textAlign: "center", minWidth: 80 },
+  shabbatBtnActive: { border: `1px solid ${C.gold}`, color: C.gold },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 13 },
+  th: { color: C.gold, textAlign: "right", padding: "6px 8px", borderBottom: `1px solid ${C.border}`, fontWeight: 700 },
+  td: { padding: "7px 8px", borderBottom: `1px solid ${C.border}`, color: C.text },
+  barWrap: { display: "flex", alignItems: "center", gap: 6 },
+  bar: { height: 6, borderRadius: 3, background: C.gold },
+  toast: { position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", color: "#fff", padding: "10px 24px", borderRadius: 20, fontSize: 14, fontWeight: 700, zIndex: 999, boxShadow: "0 4px 20px rgba(0,0,0,.5)" },
+};
+
+function Card({ title, children }) {
+  return <div style={s.card}><div style={s.cardTitle}>{title}</div>{children}</div>;
+}
+
+function AssignRow({ role, assignedId, getName, members, presentIds, onOverride }) {
+  const [editing, setEditing] = useState(false);
+  return (
+    <div style={s.assignRow}>
+      <span style={s.assignRole}>{role}</span>
+      {editing ? (
+        <select style={s.selectSm} defaultValue={assignedId || ""}
+          onChange={e => { onOverride(e.target.value || null); setEditing(false); }}>
+          <option value="">— ללא —</option>
+          {members.filter(m => presentIds.includes(m.id)).map(m => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
+      ) : (
+        <span style={s.assignName} onClick={() => setEditing(true)} title="לחץ לעריכה">
+          {getName(assignedId)} ✏️
+        </span>
+      )}
+    </div>
+  );
+}
+
+const TABS = ["שבת נוכחית", "עולים בפועל", "מתפללים", "סטטיסטיקות"];
+
+function ShabbatTab({ data, updateData, currentShabbat, setCurrentShabbat, getShabbat, showToast }) {
+  const sh = getShabbat(currentShabbat);
+  const [suggestion, setSuggestion] = useState(null);
+  const [guestName, setGuestName] = useState("");
+  const [guestRole, setGuestRole] = useState(ROLES.ISRAEL);
+  const [guestHaftara, setGuestHaftara] = useState(false);
+  const [manualOverrides, setManualOverrides] = useState({});
+
+  const togglePresent = id => {
+    updateData(d => {
+      const sv = d.shabbatot[currentShabbat] || { present: [], guests: [], assignments: {}, actual: {} };
+      const present = sv.present.includes(id) ? sv.present.filter(x => x !== id) : [...sv.present, id];
+      d.shabbatot[currentShabbat] = { ...sv, present };
+    });
+    setSuggestion(null);
+  };
+
+  const addGuest = () => {
+    if (!guestName.trim()) return;
+    const guestId = `guest_${Date.now()}`;
+    const guest = { id: guestId, name: guestName.trim(), role: guestRole, knowsHaftara: guestHaftara, isGuest: true };
+    updateData(d => {
+      const sv = d.shabbatot[currentShabbat] || { present: [], guests: [], assignments: {}, actual: {} };
+      d.shabbatot[currentShabbat] = { ...sv, guests: [...(sv.guests || []), guest] };
+    });
+    setGuestName(""); setGuestRole(ROLES.ISRAEL); setGuestHaftara(false);
+  };
+
+  const removeGuest = gid => {
+    updateData(d => {
+      const sv = d.shabbatot[currentShabbat];
+      if (!sv) return;
+      d.shabbatot[currentShabbat] = { ...sv, guests: sv.guests.filter(g => g.id !== gid) };
+    });
+  };
+
+  const generate = () => {
+    const allMembers = [...data.members, ...(sh.guests || [])];
+    const result = generateSuggestion(allMembers, data.shabbatot, currentShabbat,
+      sh.present || [], (sh.guests || []).map(g => g.id), manualOverrides);
+    setSuggestion(result);
+    updateData(d => {
+      const sv = d.shabbatot[currentShabbat] || {};
+      d.shabbatot[currentShabbat] = { ...sv, assignments: result.assignment, reserves: result.reserves };
+    });
+    showToast("הרשימה נוצרה בהצלחה!");
+  };
+
+  const getName = id => {
+    if (!id) return "—";
+    const m = data.members.find(x => x.id === id);
+    if (m) return m.name;
+    const g = (sh.guests || []).find(x => x.id === id);
+    return g ? g.name + " (אורח)" : "—";
+  };
+
+  const presentSet = new Set(sh.present || []);
+  const asgn = suggestion?.assignment || sh.assignments || {};
+
+  const exportWhatsapp = () => {
+    let txt = `📋 *עליות לתורה - שבת ${hebrewDate(currentShabbat)}*\n\n*עליות:*\n`;
+    for (const r of ALIYOT) txt += `${r}: ${getName(asgn[r])}\n`;
+    txt += `\n*כיבודים:*\n`;
+    for (const k of KIBBUDIM) txt += `${k}: ${getName(asgn[k])}\n`;
+    const res = suggestion?.reserves || sh.reserves || [];
+    if (res.length) txt += `\n*רזרבות:* ${res.map(getName).join(", ")}\n`;
+    navigator.clipboard.writeText(txt)
+      .then(() => showToast("הועתק ללוח!"))
+      .catch(() => showToast("שגיאה בהעתקה", "error"));
+  };
+
+  return (
+    <div style={s.tabContent}>
+      <Card title="בחירת שבת">
+        <input type="date" value={currentShabbat}
+          onChange={e => { setCurrentShabbat(e.target.value); setSuggestion(null); }} style={s.input} />
+        <div style={{ marginTop: 6, fontSize: 13, color: C.muted }}>{hebrewDate(currentShabbat)}</div>
+      </Card>
+
+      <Card title={`נוכחות (${presentSet.size} מסומנים)`}>
+        {data.members.length === 0
+          ? <p style={{ color: C.muted, fontSize: 13 }}>הוסף מתפללים בלשונית "מתפללים" תחילה</p>
+          : <div style={s.memberGrid}>
+            {data.members.map(m => (
+              <button key={m.id}
+                style={{ ...s.memberChip, ...(presentSet.has(m.id) ? s.memberChipActive : {}) }}
+                onClick={() => togglePresent(m.id)}>
+                <span style={s.roleTag(m.role)}>{m.role[0]}</span>
+                {m.name}
+                {m.knowsHaftara && <span style={s.haftaraTag}>ה</span>}
+              </button>
+            ))}
+          </div>}
+      </Card>
+
+      <Card title="אורחים">
+        <div style={s.row}>
+          <input placeholder="שם האורח" value={guestName} onChange={e => setGuestName(e.target.value)}
+            style={{ ...s.input, flex: 1 }} />
+          <select value={guestRole} onChange={e => setGuestRole(e.target.value)} style={s.select}>
+            {Object.values(ROLES).map(r => <option key={r}>{r}</option>)}
+          </select>
+          <label style={s.checkLabel}>
+            <input type="checkbox" checked={guestHaftara} onChange={e => setGuestHaftara(e.target.checked)} /> הפטרה
+          </label>
+          <button style={s.btnPrimary} onClick={addGuest}>הוסף</button>
+        </div>
+        {(sh.guests || []).map(g => (
+          <div key={g.id} style={s.guestRow}>
+            <span>{g.name} — {g.role}{g.knowsHaftara ? " (הפטרה)" : ""}</span>
+            <button style={s.btnDanger} onClick={() => removeGuest(g.id)}>הסר</button>
+          </div>
+        ))}
+      </Card>
+
+      <button style={s.btnBig} onClick={generate}>⚡ צור רשימת עליות אוטומטית</button>
+
+      {Object.keys(asgn).length > 0 && (
+        <Card title="הצעת רשימה">
+          <div style={s.assignmentGrid}>
+            <div style={s.assignSection}>
+              <div style={s.sectionLabel}>עליות לתורה</div>
+              {ALIYOT.map(r => (
+                <AssignRow key={r} role={r} assignedId={asgn[r]} getName={getName}
+                  members={[...data.members, ...(sh.guests || [])]}
+                  presentIds={[...presentSet, ...(sh.guests || []).map(g => g.id)]}
+                  onOverride={id => { setManualOverrides(p => ({ ...p, [r]: id })); setSuggestion(null); }} />
+              ))}
+            </div>
+            <div style={s.assignSection}>
+              <div style={s.sectionLabel}>כיבודים</div>
+              {KIBBUDIM.map(k => (
+                <AssignRow key={k} role={k} assignedId={asgn[k]} getName={getName}
+                  members={[...data.members, ...(sh.guests || [])]}
+                  presentIds={[...presentSet, ...(sh.guests || []).map(g => g.id)]}
+                  onOverride={id => { setManualOverrides(p => ({ ...p, [k]: id })); setSuggestion(null); }} />
+              ))}
+            </div>
+          </div>
+          {(suggestion?.reserves || sh.reserves || []).length > 0 && (
+            <div style={s.reserves}>
+              <strong>רזרבות: </strong>
+              {(suggestion?.reserves || sh.reserves || []).map(getName).join(" | ")}
+            </div>
+          )}
+          <button style={{ ...s.btnPrimary, marginTop: 12, width: "100%" }} onClick={exportWhatsapp}>
+            📱 העתק לוואטסאפ
+          </button>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function ActualTab({ data, updateData, currentShabbat, getShabbat, showToast }) {
+  const [selectedShabbat, setSelectedShabbat] = useState(currentShabbat);
+  const pastShabbatot = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date(currentShabbat);
+    d.setDate(d.getDate() - i * 7);
+    return getShabbatId(d);
+  });
+  const sh = getShabbat(selectedShabbat);
+  const allMembers = [...data.members, ...(sh.guests || [])];
+  const presentIds = [...(sh.present || []), ...(sh.guests || []).map(g => g.id)];
+  const asgn = sh.actual || sh.assignments || {};
+
+  const setActual = (role, id) => {
+    updateData(d => {
+      const sv = d.shabbatot[selectedShabbat] || {};
+      d.shabbatot[selectedShabbat] = { ...sv, actual: { ...(sv.actual || {}), [role]: id || null } };
+    });
+  };
+
+  return (
+    <div style={s.tabContent}>
+      <Card title="בחר שבת לעדכון">
+        <div style={s.shabbatPicker}>
+          {pastShabbatot.map(sid => (
+            <button key={sid}
+              style={{ ...s.shabbatBtn, ...(selectedShabbat === sid ? s.shabbatBtnActive : {}) }}
+              onClick={() => setSelectedShabbat(sid)}>
+              {sid}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card title={`עולים בפועל — ${hebrewDate(selectedShabbat)}`}>
+        <div style={s.assignmentGrid}>
+          <div style={s.assignSection}>
+            <div style={s.sectionLabel}>עליות לתורה</div>
+            {ALIYOT.map(r => (
+              <div key={r} style={s.assignRow}>
+                <span style={s.assignRole}>{r}</span>
+                <select style={s.selectSm} value={asgn[r] || ""} onChange={e => setActual(r, e.target.value)}>
+                  <option value="">— לא עלה —</option>
+                  {allMembers.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}{m.isGuest ? " (אורח)" : ""}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+          <div style={s.assignSection}>
+            <div style={s.sectionLabel}>כיבודים</div>
+            {KIBBUDIM.map(k => (
+              <div key={k} style={s.assignRow}>
+                <span style={s.assignRole}>{k}</span>
+                <select style={s.selectSm} value={asgn[k] || ""} onChange={e => setActual(k, e.target.value)}>
+                  <option value="">— לא בוצע —</option>
+                  {allMembers.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}{m.isGuest ? " (אורח)" : ""}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button style={{ ...s.btnPrimary, marginTop: 14, width: "100%" }}
+          onClick={() => showToast("נשמר בהצלחה!")}>
+          💾 שמור עולים בפועל
+        </button>
+      </Card>
+    </div>
+  );
+}
+
+function MembersTab({ data, updateData, showToast }) {
+  const [form, setForm] = useState({ name: "", role: ROLES.ISRAEL, knowsHaftara: false });
+  const [editId, setEditId] = useState(null);
+
+  const save = () => {
+    if (!form.name.trim()) return;
+    if (editId) {
+      updateData(d => { d.members = d.members.map(m => m.id === editId ? { ...m, ...form } : m); });
+      setEditId(null);
+      showToast("עודכן בהצלחה!");
+    } else {
+      updateData(d => { d.members.push({ ...form, id: d.nextMemberId++, name: form.name.trim() }); });
+      showToast("נוסף בהצלחה!");
+    }
+    setForm({ name: "", role: ROLES.ISRAEL, knowsHaftara: false });
+  };
+
+  const startEdit = m => { setForm({ name: m.name, role: m.role, knowsHaftara: m.knowsHaftara }); setEditId(m.id); };
+  const remove = id => { updateData(d => { d.members = d.members.filter(m => m.id !== id); }); showToast("הוסר"); };
+
+  return (
+    <div style={s.tabContent}>
+      <Card title={editId ? "עריכת מתפלל" : "הוספת מתפלל"}>
+        <div style={s.row}>
+          <input placeholder="שם" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+            style={{ ...s.input, flex: 1 }} />
+          <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} style={s.select}>
+            {Object.values(ROLES).map(r => <option key={r}>{r}</option>)}
+          </select>
+        </div>
+        <label style={{ ...s.checkLabel, marginTop: 8 }}>
+          <input type="checkbox" checked={form.knowsHaftara}
+            onChange={e => setForm({ ...form, knowsHaftara: e.target.checked })} />
+          &nbsp;יודע לקרוא הפטרה
+        </label>
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <button style={s.btnPrimary} onClick={save}>{editId ? "עדכן" : "הוסף"}</button>
+          {editId && <button style={s.btnSecondary} onClick={() => { setEditId(null); setForm({ name: "", role: ROLES.ISRAEL, knowsHaftara: false }); }}>ביטול</button>}
+        </div>
+      </Card>
+
+      <Card title={`רשימת מתפללים (${data.members.length})`}>
+        {data.members.length === 0 && <p style={{ color: C.muted, textAlign: "center" }}>אין מתפללים עדיין</p>}
+        {data.members.map(m => (
+          <div key={m.id} style={s.memberRow}>
+            <span style={s.roleTag(m.role)}>{m.role}</span>
+            <span style={{ flex: 1, fontWeight: 600 }}>{m.name}</span>
+            {m.knowsHaftara && <span style={s.haftaraTag}>הפטרה</span>}
+            <button style={s.btnEdit} onClick={() => startEdit(m)}>✏️</button>
+            <button style={s.btnDanger} onClick={() => remove(m.id)}>🗑️</button>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+function StatsTab({ data }) {
+  const allShabbatIds = Object.keys(data.shabbatot).sort();
+  const memberStats = data.members.map(m => {
+    let aliyot = 0, kibbudim = 0, attended = 0;
+    for (const sid of allShabbatIds) {
+      const sh = data.shabbatot[sid];
+      if (!sh || !(sh.present || []).includes(m.id)) continue;
+      attended++;
+      const actual = sh.actual || {};
+      for (const r of ALIYOT) if (actual[r] === m.id) aliyot++;
+      for (const k of KIBBUDIM) if (actual[k] === m.id) kibbudim++;
+    }
+    return { ...m, aliyot, kibbudim, attended, rate: attended > 0 ? Math.round(aliyot / attended * 100) : 0 };
+  }).sort((a, b) => b.aliyot - a.aliyot);
+
+  return (
+    <div style={s.tabContent}>
+      <Card title="סיכום כללי">
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {[
+            ["שבתות מוזנות", allShabbatIds.length],
+            ["מתפללים קבועים", data.members.length],
+            ["יודעי הפטרה", data.members.filter(m => m.knowsHaftara).length],
+          ].map(([label, val]) => (
+            <div key={label} style={{ background: C.surface2, borderRadius: 10, padding: "12px 20px", textAlign: "center", flex: 1, minWidth: 100 }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: C.gold }}>{val}</div>
+              <div style={{ fontSize: 12, color: C.muted }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card title="סטטיסטיקות לפי מתפלל">
+        <div style={{ overflowX: "auto" }}>
+          <table style={s.table}>
+            <thead>
+              <tr>{["שם", "סטטוס", "נוכחות", "עליות", "כיבודים", "% עלייה"].map(h => (
+                <th key={h} style={s.th}>{h}</th>
+              ))}</tr>
+            </thead>
+            <tbody>
+              {memberStats.map(m => (
+                <tr key={m.id}>
+                  <td style={s.td}>{m.name}</td>
+                  <td style={s.td}><span style={s.roleTag(m.role)}>{m.role}</span></td>
+                  <td style={s.td}>{m.attended}</td>
+                  <td style={s.td}><strong>{m.aliyot}</strong></td>
+                  <td style={s.td}>{m.kibbudim}</td>
+                  <td style={s.td}>
+                    <div style={s.barWrap}>
+                      <div style={{ ...s.bar, width: Math.min(m.rate, 100) + "%" }} />
+                      <span>{m.rate}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {memberStats.length === 0 && <p style={{ color: C.muted, textAlign: "center", marginTop: 12 }}>אין נתונים עדיין</p>}
+      </Card>
+    </div>
+  );
+}
+
+function App() {
+  const [data, setData] = useState(loadData);
+  const [activeTab, setActiveTab] = useState(0);
+  const [currentShabbat, setCurrentShabbat] = useState(todayShabbat);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => { saveData(data); }, [data]);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const updateData = useCallback(fn => {
+    setData(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      fn(next);
+      return next;
+    });
+  }, []);
+
+  const getShabbat = sid => data.shabbatot[sid] || { present: [], guests: [], assignments: {}, actual: {} };
+
+  return (
+    <div style={s.app}>
+      <header style={s.header}>
+        <div style={s.headerInner}>
+          <span style={s.logo}>✡</span>
+          <h1 style={s.title}>גבאי חכם</h1>
+          <span style={s.subtitle}>ניהול עליות לתורה</span>
+        </div>
+      </header>
+
+      <nav style={s.nav}>
+        {TABS.map((t, i) => (
+          <button key={t} style={{ ...s.navBtn, ...(activeTab === i ? s.navBtnActive : {}) }}
+            onClick={() => setActiveTab(i)}>{t}</button>
+        ))}
+      </nav>
+
+      <main style={s.main}>
+        {activeTab === 0 && <ShabbatTab data={data} updateData={updateData} currentShabbat={currentShabbat} setCurrentShabbat={setCurrentShabbat} getShabbat={getShabbat} showToast={showToast} />}
+        {activeTab === 1 && <ActualTab data={data} updateData={updateData} currentShabbat={currentShabbat} getShabbat={getShabbat} showToast={showToast} />}
+        {activeTab === 2 && <MembersTab data={data} updateData={updateData} showToast={showToast} />}
+        {activeTab === 3 && <StatsTab data={data} />}
+      </main>
+
+      {toast && (
+        <div style={{ ...s.toast, background: toast.type === "error" ? C.red : C.green }}>
+          {toast.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
