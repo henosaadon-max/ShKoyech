@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>גבאי חכם</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1117; color: #e8e8f0; font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; }
+button, input, select { font-family: inherit; font-size: 14px; }
+.app { max-width: 680px; margin: 0 auto; min-height: 100vh; }
+.header { background: linear-gradient(135deg,#1a1d27,#22263a); border-bottom: 2px solid #d4a843; padding: 14px 16px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 10px; }
+.header h1 { font-size: 20px; font-weight: 800; color: #f0c96e; }
+.header span { font-size: 12px; color: #8890aa; margin-right: auto; }
+.nav { display: flex; background: #1a1d27; border-bottom: 1px solid #2e3250; overflow-x: auto; }
+.nav button { flex: 1; min-width: 75px; padding: 11px 6px; background: none; border: none; border-bottom: 2px solid transparent; color: #8890aa; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.nav button.active { color: #d4a843; border-bottom: 2px solid #d4a843; }
+.main { padding: 14px 12px 50px; display: flex; flex-direction: column; gap: 12px; }
+.card { background: #1a1d27; border: 1px solid #2e3250; border-radius: 12px; padding: 14px; }
+.card-title { font-size: 12px; font-weight: 700; color: #d4a843; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2e3250; }
+input[type=text], input[type=date] { background: #22263a; border: 1px solid #2e3250; border-radius: 8px; color: #e8e8f0; padding: 9px 12px; width: 100%; outline: none; }
+select { background: #22263a; border: 1px solid #2e3250; border-radius: 8px; color: #e8e8f0; padding: 8px 10px; outline: none; }
+.btn { border: none; border-radius: 8px; padding: 9px 16px; font-weight: 700; cursor: pointer; }
+.btn-gold { background: #d4a843; color: #000; }
+.btn-big { background: linear-gradient(135deg,#d4a843,#f0c96e); color: #000; border: none; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 16px; cursor: pointer; width: 100%; }
+.btn-sec { background: #22263a; color: #e8e8f0; border: 1px solid #2e3250; border-radius: 8px; padding: 9px 16px; cursor: pointer; }
+.btn-danger { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 18px; padding: 2px 6px; }
+.btn-edit { background: none; border: none; color: #4a90d9; cursor: pointer; font-size: 16px; padding: 2px 6px; }
+.btn-full { width: 100%; margin-top: 12px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.member-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: #22263a; border: 1px solid #2e3250; border-radius: 20px; color: #8890aa; padding: 7px 12px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.chip.on { background: #1a2e1a; border-color: #27ae60; color: #e8e8f0; }
+.role-k { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #3a1a1a; color: #e57373; }
+.role-l { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #1a1a3a; color: #64b5f6; }
+.role-i { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #1a2a1a; color: #81c784; }
+.haf { font-size: 10px; background: #3a2a00; color: #d4a843; border-radius: 8px; padding: 1px 5px; font-weight: 700; }
+.assign-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+.assign-col { flex: 1; min-width: 180px; }
+.col-title { font-size: 11px; color: #d4a843; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+.assign-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #2e3250; }
+.assign-label { font-size: 13px; color: #8890aa; min-width: 80px; flex-shrink: 0; }
+.assign-name { font-size: 13px; color: #e8e8f0; flex: 1; cursor: pointer; }
+.reserves { margin-top: 10px; padding: 8px 12px; background: #22263a; border-radius: 8px; font-size: 13px; color: #8890aa; border: 1px dashed #2e3250; }
+.member-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #2e3250; }
+.shab-picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.shab-btn { background: #22263a; border: 1px solid #2e3250; border-radius: 8px; color: #8890aa; padding: 8px 10px; font-size: 11px; cursor: pointer; white-space: nowrap; text-align: center; min-width: 90px; }
+.shab-btn.active { border-color: #d4a843; color: #d4a843; }
+.guest-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-top: 1px solid #2e3250; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { color: #d4a843; text-align: right; padding: 7px 8px; border-bottom: 1px solid #2e3250; font-weight: 700; }
+td { padding: 7px 8px; border-bottom: 1px solid #2e3250; }
+.bar-wrap { display: flex; align-items: center; gap: 6px; }
+.bar-bg { background: #22263a; border-radius: 3px; height: 6px; flex: 1; overflow: hidden; }
+.bar-fill { background: #d4a843; height: 6px; border-radius: 3px; }
+.stat-box { background: #22263a; border-radius: 10px; padding: 12px; text-align: center; flex: 1; min-width: 90px; }
+.stat-num { font-size: 28px; font-weight: 800; color: #d4a843; }
+.stat-label { font-size: 11px; color: #8890aa; margin-top: 2px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: #fff; padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 700; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,.5); pointer-events: none; }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #8890aa; cursor: pointer; margin-top: 8px; }
+.muted { color: #8890aa; font-size: 13px; text-align: center; padding: 8px 0; }
+select.sm { padding: 5px 8px; font-size: 13px; flex: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span style="font-size:26px;color:#d4a843">✡</span>
+    <h1>גבאי חכם</h1>
+    <span>ניהול עליות לתורה</span>
+  </div>
+  <div class="nav" id="nav"></div>
+  <div class="main" id="main"></div>
+  <div class="toast" id="toast" style="display:none"></div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────
+const STORAGE_KEY = "gabai_v2";
+const ROLES = { K: "כהן", L: "לוי", I: "ישראל" };
+const ALIYOT = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שביעי","מפטיר"];
+const KIBBUDIM = ["פתיחת היכל","הוצאת ספר תורה","הגבהה"];
+const TABS = ["שבת נוכחית","עולים בפועל","מתפללים","סטטיסטיקות"];
+
+let activeTab = 0;
+let DB = load();
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || init(); } catch(e) { return init(); }
+}
+function init() { return { members:[], shabbatot:{}, nextId:1 }; }
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }
+
+function getShabbatId(d) {
+  const dt = new Date(d);
+  const diff = (6 - dt.getDay() + 7) % 7;
+  dt.setDate(dt.getDate() + diff);
+  return dt.toISOString().split("T")[0];
+}
+function todaySid() { return getShabbatId(new Date()); }
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString("he-IL",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+}
+function getSh(sid) {
+  return DB.shabbatot[sid] || {present:[],guests:[],assignments:{},actual:{}};
+}
+function setSh(sid, data) {
+  DB.shabbatot[sid] = data;
+  save();
+}
+
+let currentSid = todaySid();
+let manualOverrides = {};
+let lastSuggestion = null;
+
+// ── Algorithm ─────────────────────────────────────────────────────────────
+function scores(allMembers, sid, presentIds) {
+  const sids = Object.keys(DB.shabbatot).sort();
+  const prevSid = sids.filter(s => s < sid).slice(-1)[0];
+  const result = {};
+  for (const id of presentIds) {
+    let aliyot=0, kibud=0, lastA=null, lastK=null, attended=0;
+    for (const s of sids) {
+      if (s >= sid) continue;
+      const sh = DB.shabbatot[s];
+      if (!sh) continue;
+      const here = (sh.present||[]).includes(id)||(sh.guests||[]).some(g=>g.id===id);
+      if (!here) continue;
+      attended++;
+      const act = sh.actual||{};
+      for (const r of ALIYOT) if (act[r]===id){aliyot++;lastA=s;}
+      for (const k of KIBBUDIM) if (act[k]===id){kibud++;lastK=s;}
+    }
+    const blockedAliya = prevSid ? ALIYOT.some(r=>(DB.shabbatot[prevSid]?.actual||{})[r]===id) : false;
+    const ar = attended>0?aliyot/attended:0;
+    const kr = attended>0?kibud/attended:0;
+    const wa = lastA ? sids.filter(s=>s>lastA&&s<sid).length+1 : 99;
+    const wk = lastK ? sids.filter(s=>s>lastK&&s<sid).length+1 : 99;
+    result[id] = { aliyaScore: wa*10-ar*5, kibbudScore: wk*10-kr*5, blockedAliya, aliyot, kibud, attended };
+  }
+  return result;
+}
+
+function suggest(sid, presentIds, guestIds, overrides) {
+  const sh = getSh(sid);
+  const allMembers = [...DB.members, ...(sh.guests||[])];
+  const all = [...presentIds, ...guestIds];
+  const sc = scores(allMembers, sid, all);
+  const getMember = id => allMembers.find(m=>m.id===id)||{role:ROLES.I,knowsHaftara:false};
+
+  const forAliya = [...all].filter(id=>!sc[id]?.blockedAliya).sort((a,b)=>(sc[b]?.aliyaScore||0)-(sc[a]?.aliyaScore||0));
+  const forKibud = [...all].sort((a,b)=>(sc[b]?.kibbudScore||0)-(sc[a]?.kibbudScore||0));
+
+  const asgn = {...overrides};
+  const used = new Set(Object.values(overrides).filter(Boolean));
+
+  function assign(role, cands) {
+    if (asgn[role]) return;
+    for (const id of cands) { if (!used.has(id)){asgn[role]=id;used.add(id);return;} }
+  }
+
+  assign("ראשון", forAliya.filter(id=>getMember(id).role===ROLES.K));
+  assign("שני", forAliya.filter(id=>getMember(id).role===ROLES.L));
+  assign("מפטיר", forAliya.filter(id=>getMember(id).knowsHaftara));
+  for (const r of ["שלישי","רביעי","חמישי","שישי","שביעי"]) assign(r, forAliya);
+  const iFirst = [...forKibud.filter(id=>getMember(id).role===ROLES.I), ...forKibud.filter(id=>getMember(id).role!==ROLES.I)];
+  for (const k of KIBBUDIM) assign(k, iFirst);
+  const reserves = forAliya.filter(id=>!used.has(id)).slice(0,3);
+  return {asgn, reserves};
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────
+function $(id){return document.getElementById(id);}
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
+
+let toastTimer;
+function showToast(msg, type="ok") {
+  const t = $("toast");
+  t.textContent = msg;
+  t.style.background = type==="err" ? "#c0392b" : "#27ae60";
+  t.style.display = "block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.display="none"; }, 3000);
+}
+
+function roleTag(role) {
+  const cls = role===ROLES.K?"role-k":role===ROLES.L?"role-l":"role-i";
+  return `<span class="${cls}">${role}</span>`;
+}
+
+function getName(id, sid) {
+  if (!id) return "—";
+  const m = DB.members.find(x=>x.id===id);
+  if (m) return m.name;
+  const sh = getSh(sid||currentSid);
+  const g = (sh.guests||[]).find(x=>x.id===id);
+  return g ? g.name+" (אורח)" : "—";
+}
+
+// ── Render nav ────────────────────────────────────────────────────────────
+function renderNav() {
+  const nav = $("nav");
+  nav.innerHTML = "";
+  TABS.forEach((t,i)=>{
+    const b = el("button","","");
+    b.textContent = t;
+    if (i===activeTab) b.classList.add("active");
+    b.onclick = ()=>{ activeTab=i; manualOverrides={}; lastSuggestion=null; render(); };
+    nav.appendChild(b);
+  });
+}
+
+// ── Render main ───────────────────────────────────────────────────────────
+function render() {
+  renderNav();
+  const main = $("main");
+  main.innerHTML = "";
+  if (activeTab===0) renderShabbat(main);
+  else if (activeTab===1) renderActual(main);
+  else if (activeTab===2) renderMembers(main);
+  else renderStats(main);
+}
+
+// ── Tab 0: Shabbat ────────────────────────────────────────────────────────
+function renderShabbat(root) {
+  const sh = getSh(currentSid);
+  const presentSet = new Set(sh.present||[]);
+
+  // Date card
+  const dc = el("div","card");
+  dc.innerHTML = `<div class="card-title">בחירת שבת</div>
+    <input type="date" id="shab-date" value="${currentSid}">
+    <div style="margin-top:6px;font-size:13px;color:#8890aa" id="shab-label">${fmtDate(currentSid)}</div>`;
+  root.appendChild(dc);
+  $("shab-date").onchange = e => {
+    currentSid = getShabbatId(e.target.value)||e.target.value;
+    manualOverrides = {}; lastSuggestion = null;
+    render();
+  };
+
+  // Presence card
+  const pc = el("div","card");
+  pc.innerHTML = `<div class="card-title">נוכחות (${presentSet.size} מסומנים)</div>`;
+  if (DB.members.length===0) {
+    pc.innerHTML += `<div class="muted">הוסף מתפללים בלשונית "מתפללים" תחילה</div>`;
+  } else {
+    const grid = el("div","member-grid");
+    DB.members.forEach(m=>{
+      const b = el("button", "chip"+(presentSet.has(m.id)?" on":""));
+      b.innerHTML = `<span class="${m.role===ROLES.K?"role-k":m.role===ROLES.L?"role-l":"role-i"}">${m.role[0]}</span>${m.name}${m.knowsHaftara?'<span class="haf">ה</span>':""}`;
+      b.onclick = ()=>{
+        const sv = getSh(currentSid);
+        const p = sv.present||[];
+        sv.present = p.includes(m.id)?p.filter(x=>x!==m.id):[...p,m.id];
+        setSh(currentSid,sv);
+        lastSuggestion=null;
+        render();
+      };
+      grid.appendChild(b);
+    });
+    pc.appendChild(grid);
+  }
+  root.appendChild(pc);
+
+  // Guests card
+  const gc = el("div","card");
+  gc.innerHTML = `<div class="card-title">אורחים</div>
+    <div class="row">
+      <input type="text" id="g-name" placeholder="שם האורח" style="flex:1">
+      <select id="g-role">
+        <option value="ישראל">ישראל</option>
+        <option value="כהן">כהן</option>
+        <option value="לוי">לוי</option>
+      </select>
+    </div>
+    <label class="check-row"><input type="checkbox" id="g-haf"> יודע הפטרה</label>
+    <button class="btn btn-gold" style="margin-top:10px" id="g-add">הוסף אורח</button>`;
+  (sh.guests||[]).forEach(g=>{
+    const row = el("div","guest-row");
+    row.innerHTML = `<span>${g.name} — ${g.role}${g.knowsHaftara?" (הפטרה)":""}</span>`;
+    const rb = el("button","btn-danger","🗑️");
+    rb.onclick=()=>{
+      const sv=getSh(currentSid);
+      sv.guests=(sv.guests||[]).filter(x=>x.id!==g.id);
+      setSh(currentSid,sv); render();
+    };
+    row.appendChild(rb);
+    gc.appendChild(row);
+  });
+  root.appendChild(gc);
+  $("g-add").onclick=()=>{
+    const name=$("g-name").value.trim();
+    if(!name)return;
+    const guest={id:"g_"+Date.now(),name,role:$("g-role").value,knowsHaftara:$("g-haf").checked,isGuest:true};
+    const sv=getSh(currentSid);
+    sv.guests=[...(sv.guests||[]),guest];
+    setSh(currentSid,sv);
+    render();
+  };
+
+  // Generate button
+  const gb = el("button","btn-big","⚡ צור רשימת עליות אוטומטית");
+  gb.onclick=()=>{
+    const sv=getSh(currentSid);
+    const gIds=(sv.guests||[]).map(g=>g.id);
+    const res=suggest(currentSid,sv.present||[],gIds,manualOverrides);
+    lastSuggestion=res;
+    sv.assignments=res.asgn;
+    sv.reserves=res.reserves;
+    setSh(currentSid,sv);
+    showToast("הרשימה נוצרה בהצלחה!");
+    render();
+  };
+  root.appendChild(gb);
+
+  // Suggestion
+  const sv=getSh(currentSid);
+  const asgn=sv.assignments||{};
+  if(Object.keys(asgn).length>0){
+    const card=el("div","card");
+    card.innerHTML=`<div class="card-title">הצעת רשימה</div>`;
+    const grid=el("div","assign-grid");
+
+    const col1=el("div","assign-col");
+    col1.innerHTML=`<div class="col-title">עליות לתורה</div>`;
+    ALIYOT.forEach(r=>col1.appendChild(makeAssignRow(r,asgn[r],sv)));
+    grid.appendChild(col1);
+
+    const col2=el("div","assign-col");
+    col2.innerHTML=`<div class="col-title">כיבודים</div>`;
+    KIBBUDIM.forEach(k=>col2.appendChild(makeAssignRow(k,asgn[k],sv)));
+    grid.appendChild(col2);
+
+    card.appendChild(grid);
+
+    if((sv.reserves||[]).length>0){
+      const res=el("div","reserves");
+      res.innerHTML=`<strong>רזרבות: </strong>${(sv.reserves||[]).map(id=>getName(id)).join(" | ")}`;
+      card.appendChild(res);
+    }
+
+    const wb=el("button","btn btn-gold btn-full","📱 העתק לוואטסאפ");
+    wb.onclick=()=>{
+      let txt=`📋 *עליות לתורה - שבת ${fmtDate(currentSid)}*\n\n*עליות:*\n`;
+      ALIYOT.forEach(r=>txt+=`${r}: ${getName(asgn[r])}\n`);
+      txt+=`\n*כיבודים:*\n`;
+      KIBBUDIM.forEach(k=>txt+=`${k}: ${getName(asgn[k])}\n`);
+      if((sv.reserves||[]).length) txt+=`\n*רזרבות:* ${(sv.reserves||[]).map(id=>getName(id)).join(", ")}`;
+      navigator.clipboard.writeText(txt).then(()=>showToast("הועתק!")).catch(()=>showToast("שגיאה","err"));
+    };
+    card.appendChild(wb);
+    root.appendChild(card);
+  }
+}
+
+function makeAssignRow(role, assignedId, sh) {
+  const row = el("div","assign-row");
+  const label = el("span","assign-label",role);
+  row.appendChild(label);
+
+  const nameSpan = el("span","assign-name", getName(assignedId)+" ✏️");
+  nameSpan.title = "לחץ לעריכה";
+  nameSpan.onclick = ()=>{
+    const allM = [...DB.members,...(sh.guests||[])];
+    const presentIds = new Set([...(sh.present||[]),...(sh.guests||[]).map(g=>g.id)]);
+    const sel = document.createElement("select");
+    sel.className="sm";
+    sel.innerHTML=`<option value="">— ללא —</option>`;
+    allM.filter(m=>presentIds.has(m.id)).forEach(m=>{
+      const o=document.createElement("option");
+      o.value=m.id; o.textContent=m.name+(m.isGuest?" (אורח)":"");
+      if(m.id===assignedId) o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.onchange=()=>{
+      manualOverrides[role]=sel.value||null;
+      const sv=getSh(currentSid);
+      const gIds=(sv.guests||[]).map(g=>g.id);
+      const res=suggest(currentSid,sv.present||[],gIds,manualOverrides);
+      sv.assignments=res.asgn; sv.reserves=res.reserves;
+      setSh(currentSid,sv);
+      render();
+    };
+    row.replaceChild(sel,nameSpan);
+    sel.focus();
+  };
+  row.appendChild(nameSpan);
+  return row;
+}
+
+// ── Tab 1: Actual ─────────────────────────────────────────────────────────
+function renderActual(root) {
+  const sids = Array.from({length:5},(_,i)=>{
+    const d=new Date(currentSid); d.setDate(d.getDate()-i*7); return getShabbatId(d);
+  });
+  let selSid = sids[0];
+
+  function buildActual() {
+    root.innerHTML="";
+    const sh=getSh(selSid);
+    const allM=[...DB.members,...(sh.guests||[])];
+
+    // Picker
+    const pc=el("div","card");
+    pc.innerHTML=`<div class="card-title">בחר שבת לעדכון</div>`;
+    const picker=el("div","shab-picker");
+    sids.forEach(sid=>{
+      const b=el("button","shab-btn"+(sid===selSid?" active":""),sid);
+      b.onclick=()=>{selSid=sid;buildActual();};
+      picker.appendChild(b);
+    });
+    pc.appendChild(picker);
+    root.appendChild(pc);
+
+    const asgn=sh.actual||sh.assignments||{};
+    const card=el("div","card");
+    card.innerHTML=`<div class="card-title">עולים בפועל — ${fmtDate(selSid)}</div>`;
+    const grid=el("div","assign-grid");
+
+    function makeActRow(roles,title){
+      const col=el("div","assign-col");
+      col.innerHTML=`<div class="col-title">${title}</div>`;
+      roles.forEach(r=>{
+        const row=el("div","assign-row");
+        row.innerHTML=`<span class="assign-label">${r}</span>`;
+        const sel=document.createElement("select");
+        sel.className="sm";
+        sel.innerHTML=`<option value="">— לא עלה —</option>`;
+        allM.forEach(m=>{
+          const o=document.createElement("option");
+          o.value=m.id; o.textContent=m.name+(m.isGuest?" (אורח)":"");
+          if(m.id===asgn[r]) o.selected=true;
+          sel.appendChild(o);
+        });
+        sel.onchange=()=>{
+          const sv=getSh(selSid);
+          sv.actual=sv.actual||{};
+          sv.actual[r]=sel.value||null;
+          setSh(selSid,sv);
+        };
+        row.appendChild(sel);
+        col.appendChild(row);
+      });
+      return col;
+    }
+
+    grid.appendChild(makeActRow(ALIYOT,"עליות לתורה"));
+    grid.appendChild(makeActRow(KIBBUDIM,"כיבודים"));
+    card.appendChild(grid);
+    const sb=el("button","btn btn-gold btn-full","💾 שמור עולים בפועל");
+    sb.onclick=()=>showToast("נשמר בהצלחה!");
+    card.appendChild(sb);
+    root.appendChild(card);
+  }
+  buildActual();
+}
+
+// ── Tab 2: Members ────────────────────────────────────────────────────────
+let editingId = null;
+function renderMembers(root) {
+  const formCard=el("div","card");
+  formCard.innerHTML=`<div class="card-title">${editingId?"עריכת מתפלל":"הוספת מתפלל"}</div>
+    <div class="row">
+      <input type="text" id="m-name" placeholder="שם" style="flex:1" value="${editingId?DB.members.find(m=>m.id===editingId)?.name||"":""}">
+      <select id="m-role">
+        <option value="ישראל"${(!editingId||DB.members.find(m=>m.id===editingId)?.role===ROLES.I)?" selected":""}>ישראל</option>
+        <option value="כהן"${editingId&&DB.members.find(m=>m.id===editingId)?.role===ROLES.K?" selected":""}>כהן</option>
+        <option value="לוי"${editingId&&DB.members.find(m=>m.id===editingId)?.role===ROLES.L?" selected":""}>לוי</option>
+      </select>
+    </div>
+    <label class="check-row"><input type="checkbox" id="m-haf"${editingId&&DB.members.find(m=>m.id===editingId)?.knowsHaftara?" checked":""}> יודע לקרוא הפטרה</label>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-gold" id="m-save">${editingId?"עדכן":"הוסף"}</button>
+      ${editingId?`<button class="btn btn-sec" id="m-cancel">ביטול</button>`:""}
+    </div>`;
+  root.appendChild(formCard);
+
+  $("m-save").onclick=()=>{
+    const name=$("m-name").value.trim();
+    if(!name)return;
+    if(editingId){
+      DB.members=DB.members.map(m=>m.id===editingId?{...m,name,role:$("m-role").value,knowsHaftara:$("m-haf").checked}:m);
+      editingId=null;
+      showToast("עודכן!");
+    } else {
+      DB.members.push({id:DB.nextId++,name,role:$("m-role").value,knowsHaftara:$("m-haf").checked});
+      showToast("נוסף!");
+    }
+    save(); render();
+  };
+  if(editingId) $("m-cancel").onclick=()=>{editingId=null;render();};
+
+  const listCard=el("div","card");
+  listCard.innerHTML=`<div class="card-title">רשימת מתפללים (${DB.members.length})</div>`;
+  if(DB.members.length===0) listCard.innerHTML+=`<div class="muted">אין מתפללים עדיין</div>`;
+  DB.members.forEach(m=>{
+    const row=el("div","member-row");
+    row.innerHTML=`${roleTag(m.role)}<span style="flex:1;font-weight:600">${m.name}</span>${m.knowsHaftara?'<span class="haf">הפטרה</span>':""}`;
+    const eb=el("button","btn-edit","✏️");
+    eb.onclick=()=>{editingId=m.id;render();};
+    const db=el("button","btn-danger","🗑️");
+    db.onclick=()=>{
+      if(confirm(`למחוק את ${m.name}?`)){DB.members=DB.members.filter(x=>x.id!==m.id);save();render();}
+    };
+    row.appendChild(eb); row.appendChild(db);
+    listCard.appendChild(row);
+  });
+  root.appendChild(listCard);
+}
+
+// ── Tab 3: Stats ──────────────────────────────────────────────────────────
+function renderStats(root) {
+  const sids=Object.keys(DB.shabbatot).sort();
+  const stats=DB.members.map(m=>{
+    let aliyot=0,kibud=0,attended=0;
+    sids.forEach(sid=>{
+      const sh=DB.shabbatot[sid];
+      if(!sh||(!(sh.present||[]).includes(m.id)))return;
+      attended++;
+      const act=sh.actual||{};
+      ALIYOT.forEach(r=>{if(act[r]===m.id)aliyot++;});
+      KIBBUDIM.forEach(k=>{if(act[k]===m.id)kibud++;});
+    });
+    return {...m,aliyot,kibud,attended,rate:attended>0?Math.round(aliyot/attended*100):0};
+  }).sort((a,b)=>b.aliyot-a.aliyot);
+
+  const sc=el("div","card");
+  sc.innerHTML=`<div class="card-title">סיכום כללי</div><div class="row" style="gap:10px">
+    <div class="stat-box"><div class="stat-num">${sids.length}</div><div class="stat-label">שבתות</div></div>
+    <div class="stat-box"><div class="stat-num">${DB.members.length}</div><div class="stat-label">מתפללים</div></div>
+    <div class="stat-box"><div class="stat-num">${DB.members.filter(m=>m.knowsHaftara).length}</div><div class="stat-label">יודעי הפטרה</div></div>
+  </div>`;
+  root.appendChild(sc);
+
+  const tc=el("div","card");
+  tc.innerHTML=`<div class="card-title">סטטיסטיקות</div>`;
+  const wrap=el("div","");
+  wrap.style.overflowX="auto";
+  let html=`<table><thead><tr><th>שם</th><th>סטטוס</th><th>נוכחות</th><th>עליות</th><th>כיבודים</th><th>%</th></tr></thead><tbody>`;
+  stats.forEach(m=>{
+    html+=`<tr>
+      <td>${m.name}</td>
+      <td>${roleTag(m.role)}</td>
+      <td>${m.attended}</td>
+      <td><strong>${m.aliyot}</strong></td>
+      <td>${m.kibud}</td>
+      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(m.rate,100)}%"></div></div><span>${m.rate}%</span></div></td>
+    </tr>`;
+  });
+  html+=`</tbody></table>`;
+  if(stats.length===0) html=`<div class="muted">אין נתונים עדיין</div>`;
+  wrap.innerHTML=html;
+  tc.appendChild(wrap);
+  root.appendChild(tc);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
