@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>גבאי חכם</title>
+<title>שכוייח — ניהול עליות לתורה</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #0f1117; color: #e8e8f0; font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; }
 button, input, select { font-family: inherit; font-size: 14px; }
 .app { max-width: 680px; margin: 0 auto; min-height: 100vh; }
 .header { background: linear-gradient(135deg,#1a1d27,#22263a); border-bottom: 2px solid #d4a843; padding: 14px 16px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 10px; }
-.header h1 { font-size: 20px; font-weight: 800; color: #f0c96e; }
-.header span { font-size: 12px; color: #8890aa; margin-right: auto; }
+.header h1 { font-size: 22px; font-weight: 800; color: #f0c96e; letter-spacing: 1px; }
+.header h1 span { font-size: 13px; color: #8890aa; font-weight: 400; margin-right: 8px; }
 .nav { display: flex; background: #1a1d27; border-bottom: 1px solid #2e3250; overflow-x: auto; }
-.nav button { flex: 1; min-width: 75px; padding: 11px 6px; background: none; border: none; border-bottom: 2px solid transparent; color: #8890aa; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.nav button { flex: 1; min-width: 70px; padding: 11px 4px; background: none; border: none; border-bottom: 2px solid transparent; color: #8890aa; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .nav button.active { color: #d4a843; border-bottom: 2px solid #d4a843; }
-.main { padding: 14px 12px 50px; display: flex; flex-direction: column; gap: 12px; }
+.main { padding: 14px 12px 60px; display: flex; flex-direction: column; gap: 12px; }
 .card { background: #1a1d27; border: 1px solid #2e3250; border-radius: 12px; padding: 14px; }
 .card-title { font-size: 12px; font-weight: 700; color: #d4a843; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2e3250; }
 input[type=text], input[type=date] { background: #22263a; border: 1px solid #2e3250; border-radius: 8px; color: #e8e8f0; padding: 9px 12px; width: 100%; outline: none; }
@@ -26,15 +26,698 @@ select { background: #22263a; border: 1px solid #2e3250; border-radius: 8px; col
 .btn-sec { background: #22263a; color: #e8e8f0; border: 1px solid #2e3250; border-radius: 8px; padding: 9px 16px; cursor: pointer; }
 .btn-danger { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 18px; padding: 2px 6px; }
 .btn-edit { background: none; border: none; color: #4a90d9; cursor: pointer; font-size: 16px; padding: 2px 6px; }
-.btn-full { width: 100%; margin-top: 12px; }
+.btn-full { width: 100%; margin-top: 10px; }
+.btn-green { background: #27ae60; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-weight: 700; cursor: pointer; }
+.btn-blue { background: #2980b9; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-weight: 700; cursor: pointer; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .member-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { background: #22263a; border: 1px solid #2e3250; border-radius: 20px; color: #8890aa; padding: 7px 12px; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .chip.on { background: #1a2e1a; border-color: #27ae60; color: #e8e8f0; }
+.chip.rabbi { background: #2a1a3a; border-color: #9b59b6; color: #e8e8f0; }
 .role-k { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #3a1a1a; color: #e57373; }
 .role-l { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #1a1a3a; color: #64b5f6; }
 .role-i { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #1a2a1a; color: #81c784; }
+.role-r { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 5px; border-radius: 8px; background: #2a1a3a; color: #ce93d8; }
 .haf { font-size: 10px; background: #3a2a00; color: #d4a843; border-radius: 8px; padding: 1px 5px; font-weight: 700; }
+.fam { font-size: 10px; background: #1a2a3a; color: #64b5f6; border-radius: 8px; padding: 1px 5px; }
+.assign-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+.assign-col { flex: 1; min-width: 180px; }
+.col-title { font-size: 11px; color: #d4a843; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+.assign-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #2e3250; }
+.assign-label { font-size: 13px; color: #8890aa; min-width: 80px; flex-shrink: 0; }
+.assign-name { font-size: 13px; color: #e8e8f0; flex: 1; cursor: pointer; }
+.reserves { margin-top: 10px; padding: 8px 12px; background: #22263a; border-radius: 8px; font-size: 13px; color: #8890aa; border: 1px dashed #2e3250; }
+.member-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #2e3250; flex-wrap: wrap; }
+.shab-picker { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.shab-btn { background: #22263a; border: 1px solid #2e3250; border-radius: 8px; color: #8890aa; padding: 8px 10px; font-size: 11px; cursor: pointer; white-space: nowrap; text-align: center; min-width: 90px; }
+.shab-btn.active { border-color: #d4a843; color: #d4a843; }
+.guest-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-top: 1px solid #2e3250; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { color: #d4a843; text-align: right; padding: 7px 8px; border-bottom: 1px solid #2e3250; font-weight: 700; }
+td { padding: 7px 8px; border-bottom: 1px solid #2e3250; }
+.bar-wrap { display: flex; align-items: center; gap: 6px; }
+.bar-bg { background: #22263a; border-radius: 3px; height: 6px; flex: 1; overflow: hidden; min-width: 40px; }
+.bar-fill { background: #d4a843; height: 6px; border-radius: 3px; }
+.stat-box { background: #22263a; border-radius: 10px; padding: 12px; text-align: center; flex: 1; min-width: 80px; }
+.stat-num { font-size: 26px; font-weight: 800; color: #d4a843; }
+.stat-label { font-size: 11px; color: #8890aa; margin-top: 2px; }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: #fff; padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 700; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,.5); pointer-events: none; white-space: nowrap; }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #8890aa; cursor: pointer; margin-top: 8px; }
+.muted { color: #8890aa; font-size: 13px; text-align: center; padding: 8px 0; }
+select.sm { padding: 5px 8px; font-size: 13px; flex: 1; }
+.warning { background: #2a1a00; border: 1px solid #d4a843; border-radius: 8px; padding: 8px 12px; font-size: 12px; color: #f0c96e; margin-top: 8px; }
+.rabbi-badge { font-size: 10px; background: #2a1a3a; color: #ce93d8; border-radius: 8px; padding: 1px 5px; font-weight: 700; }
+.backup-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.divider { height: 1px; background: #2e3250; margin: 10px 0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <span style="font-size:26px;color:#d4a843">✡</span>
+    <h1>שכוייח <span>ShKoyech</span></h1>
+  </div>
+  <div class="nav" id="nav"></div>
+  <div class="main" id="main"></div>
+  <div class="toast" id="toast" style="display:none"></div>
+</div>
+
+<script>
+const STORAGE_KEY = "shkoyech_v1";
+const ROLES = { K: "כהן", L: "לוי", I: "ישראל", R: "רב" };
+const ALIYOT = ["ראשון","שני","שלישי","רביעי","חמישי","שישי","שביעי","מפטיר"];
+const KIBBUDIM = ["פתיחת היכל","הוצאת ספר תורה","הגבהה"];
+const TABS = ["שבת נוכחית","עולים בפועל","מתפללים","הגדרות","סטטיסטיקות"];
+
+let activeTab = 0;
+let DB = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : init();
+  } catch(e) { return init(); }
+}
+function init() {
+  return { members:[], shabbatot:{}, nextId:1, settings:{ rabbiId: null, rabbiAlternate: true } };
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }
+
+function getShabbatId(d) {
+  const dt = new Date(d);
+  const diff = (6 - dt.getDay() + 7) % 7;
+  dt.setDate(dt.getDate() + diff);
+  return dt.toISOString().split("T")[0];
+}
+function todaySid() { return getShabbatId(new Date()); }
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleDateString("he-IL",{weekday:"long",year:"numeric",month:"long",day:"numeric"}); }
+  catch(e) { return iso; }
+}
+function getSh(sid) {
+  return DB.shabbatot[sid] || {present:[],guests:[],assignments:{},actual:{}};
+}
+function setSh(sid, data) { DB.shabbatot[sid] = data; save(); }
+
+// Family conflict check
+function sameFamily(id1, id2) {
+  const m1 = DB.members.find(m=>m.id===id1);
+  const m2 = DB.members.find(m=>m.id===id2);
+  if (!m1||!m2) return false;
+  if (!m1.family||!m2.family) return false;
+  return m1.family.trim().toLowerCase() === m2.family.trim().toLowerCase();
+}
+
+// Check if rabbi should be skipped this shabbat
+function rabbiBlockedThisShabbat(sid) {
+  if (!DB.settings.rabbiId || !DB.settings.rabbiAlternate) return false;
+  const sids = Object.keys(DB.shabbatot).sort();
+  // count shabbatot where rabbi was present (attended)
+  let count = 0;
+  for (const s of sids) {
+    if (s >= sid) continue;
+    const sh = DB.shabbatot[s];
+    if (!sh) continue;
+    if ((sh.present||[]).includes(DB.settings.rabbiId)) count++;
+  }
+  return count % 2 === 1; // odd = skip this week
+}
+
+let currentSid = todaySid();
+let manualOverrides = {};
+
+// ── Algorithm ─────────────────────────────────────────────────────────────
+function computeScores(sid, allIds) {
+  const sids = Object.keys(DB.shabbatot).sort();
+  const prevSid = sids.filter(s => s < sid).slice(-1)[0];
+  const result = {};
+
+  for (const id of allIds) {
+    let aliyot=0, kibud=0, lastA=null, lastK=null, attended=0;
+    for (const s of sids) {
+      if (s >= sid) continue;
+      const sh = DB.shabbatot[s];
+      if (!sh) continue;
+      const here = (sh.present||[]).includes(id)||(sh.guests||[]).some(g=>g.id===id);
+      if (!here) continue;
+      attended++;
+      const act = sh.actual||{};
+      for (const r of ALIYOT) if (act[r]===id){aliyot++;lastA=s;}
+      for (const k of KIBBUDIM) if (act[k]===id){kibud++;lastK=s;}
+    }
+    // Blocked if got aliya last shabbat
+    const blockedAliya = prevSid ? ALIYOT.some(r=>(DB.shabbatot[prevSid]?.actual||{})[r]===id) : false;
+    const ar = attended>0?aliyot/attended:0;
+    const kr = attended>0?kibud/attended:0;
+    const wa = lastA ? sids.filter(s=>s>lastA&&s<sid).length+1 : 99;
+    const wk = lastK ? sids.filter(s=>s>lastK&&s<sid).length+1 : 99;
+    result[id] = { aliyaScore: wa*10 - ar*5, kibbudScore: wk*10 - kr*5, blockedAliya, aliyot, kibud, attended };
+  }
+  return result;
+}
+
+function getFamilyOfAssigned(asgn) {
+  // get families already assigned in current round
+  const families = new Set();
+  for (const role of ALIYOT) {
+    if (asgn[role]) {
+      const m = DB.members.find(x=>x.id===asgn[role]);
+      if (m&&m.family) families.add(m.family.trim().toLowerCase());
+    }
+  }
+  return families;
+}
+
+function suggest(sid, presentIds, guestIds, overrides) {
+  const sh = getSh(sid);
+  const allMembers = [...DB.members, ...(sh.guests||[])];
+  const all = [...presentIds, ...guestIds];
+  const sc = computeScores(sid, all);
+  const getMember = id => allMembers.find(m=>m.id===id)||{role:ROLES.I, knowsHaftara:false};
+  const rabbiId = DB.settings.rabbiId;
+  const rabbiBlocked = rabbiBlockedThisShabbat(sid);
+
+  const forAliya = [...all]
+    .filter(id => !sc[id]?.blockedAliya)
+    .filter(id => !(id===rabbiId && rabbiBlocked))
+    .sort((a,b) => (sc[b]?.aliyaScore||0)-(sc[a]?.aliyaScore||0));
+
+  const forKibud = [...all]
+    .filter(id => id !== rabbiId) // rabbi doesn't get kibbudim
+    .sort((a,b) => (sc[b]?.kibbudScore||0)-(sc[a]?.kibbudScore||0));
+
+  const asgn = {...overrides};
+  const used = new Set(Object.values(overrides).filter(Boolean));
+
+  function assign(role, cands) {
+    if (asgn[role]) return;
+    // get families already assigned in aliyot so far
+    const assignedFamilies = new Set();
+    for (const r of ALIYOT) {
+      if (asgn[r]) {
+        const m = DB.members.find(x=>x.id===asgn[r]);
+        if (m&&m.family) assignedFamilies.add(m.family.trim().toLowerCase());
+      }
+    }
+    // find previous aliya holder to check consecutive family
+    const roleIndex = ALIYOT.indexOf(role);
+    const prevRole = roleIndex > 0 ? ALIYOT[roleIndex-1] : null;
+    const prevId = prevRole ? asgn[prevRole] : null;
+
+    for (const id of cands) {
+      if (used.has(id)) continue;
+      // family consecutive check
+      if (prevId && sameFamily(id, prevId)) continue;
+      // also check assigned families for this session
+      const m = DB.members.find(x=>x.id===id);
+      // kibbudim don't have consecutive family restriction
+      asgn[role] = id;
+      used.add(id);
+      return;
+    }
+    // fallback: ignore family restriction if no one else available
+    for (const id of cands) {
+      if (!used.has(id)) { asgn[role]=id; used.add(id); return; }
+    }
+  }
+
+  function assignKibud(role, cands) {
+    if (asgn[role]) return;
+    for (const id of cands) {
+      if (!used.has(id)) { asgn[role]=id; used.add(id); return; }
+    }
+  }
+
+  // Rabbi always gets שישי if present and not blocked
+  if (rabbiId && presentIds.includes(rabbiId) && !rabbiBlocked) {
+    if (!asgn["שישי"]) { asgn["שישי"] = rabbiId; used.add(rabbiId); }
+  }
+
+  // Kohen → ראשון
+  assign("ראשון", forAliya.filter(id=>getMember(id).role===ROLES.K));
+  // Levi → שני
+  assign("שני", forAliya.filter(id=>getMember(id).role===ROLES.L));
+  // Maftir
+  assign("מפטיר", forAliya.filter(id=>getMember(id).knowsHaftara));
+  // שלישי to שביעי (שישי may already be rabbi)
+  for (const r of ["שלישי","רביעי","חמישי","שישי","שביעי"]) assign(r, forAliya);
+
+  // Kibbudim — prefer Israel, rabbi excluded
+  const iFirst = [...forKibud.filter(id=>getMember(id).role===ROLES.I||getMember(id).role===ROLES.K||getMember(id).role===ROLES.L)];
+  for (const k of KIBBUDIM) assignKibud(k, iFirst.length ? iFirst : forKibud);
+
+  const reserves = forAliya.filter(id=>!used.has(id)).slice(0,3);
+  return {asgn, reserves};
+}
+
+// ── UI Helpers ────────────────────────────────────────────────────────────
+function $(id){return document.getElementById(id);}
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e;}
+
+let toastTimer;
+function showToast(msg, type="ok") {
+  const t=$("toast");
+  t.textContent=msg;
+  t.style.background=type==="err"?"#c0392b":"#27ae60";
+  t.style.display="block";
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.style.display="none";},3000);
+}
+
+function roleTag(role) {
+  const cls = role===ROLES.K?"role-k":role===ROLES.L?"role-l":role===ROLES.R?"role-r":"role-i";
+  return `<span class="${cls}">${role}</span>`;
+}
+
+function getName(id, sid) {
+  if (!id) return "—";
+  const m = DB.members.find(x=>x.id===id);
+  if (m) return m.name;
+  const sh = getSh(sid||currentSid);
+  const g = (sh.guests||[]).find(x=>x.id===id);
+  return g ? g.name+" (אורח)" : "—";
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────
+function renderNav() {
+  const nav=$("nav"); nav.innerHTML="";
+  TABS.forEach((t,i)=>{
+    const b=el("button","",""); b.textContent=t;
+    if(i===activeTab) b.classList.add("active");
+    b.onclick=()=>{ activeTab=i; manualOverrides={}; render(); };
+    nav.appendChild(b);
+  });
+}
+
+function render() {
+  renderNav();
+  const main=$("main"); main.innerHTML="";
+  if(activeTab===0) renderShabbat(main);
+  else if(activeTab===1) renderActual(main);
+  else if(activeTab===2) renderMembers(main);
+  else if(activeTab===3) renderSettings(main);
+  else renderStats(main);
+}
+
+// ── Tab 0: Shabbat ────────────────────────────────────────────────────────
+function renderShabbat(root) {
+  const sh = getSh(currentSid);
+  const presentSet = new Set(sh.present||[]);
+  const rabbiBlocked = rabbiBlockedThisShabbat(currentSid);
+
+  // Date
+  const dc=el("div","card");
+  dc.innerHTML=`<div class="card-title">בחירת שבת</div>
+    <input type="date" id="shab-date" value="${currentSid}">
+    <div style="margin-top:6px;font-size:13px;color:#8890aa">${fmtDate(currentSid)}</div>`;
+  root.appendChild(dc);
+  $("shab-date").onchange=e=>{
+    currentSid=getShabbatId(e.target.value)||e.target.value;
+    manualOverrides={}; render();
+  };
+
+  // Rabbi notice
+  if (DB.settings.rabbiId) {
+    const rabbi = DB.members.find(m=>m.id===DB.settings.rabbiId);
+    if (rabbi && rabbiBlocked) {
+      const w=el("div","warning",`⚠️ שבת זו — ${rabbi.name} לא עולה (שבת לסירוגין)`);
+      root.appendChild(w);
+    }
+  }
+
+  // Presence
+  const pc=el("div","card");
+  pc.innerHTML=`<div class="card-title">נוכחות (${presentSet.size} מסומנים)</div>`;
+  if(DB.members.length===0){
+    pc.innerHTML+=`<div class="muted">הוסף מתפללים בלשונית "מתפללים" תחילה</div>`;
+  } else {
+    const grid=el("div","member-grid");
+    DB.members.forEach(m=>{
+      const isRabbi = m.id===DB.settings.rabbiId;
+      const on = presentSet.has(m.id);
+      const b=el("button","chip"+(on?" on":"")+(isRabbi?" rabbi":""));
+      b.innerHTML=`<span class="${m.role===ROLES.K?"role-k":m.role===ROLES.L?"role-l":isRabbi?"role-r":"role-i"}">${isRabbi?"ר":m.role[0]}</span>${m.name}${m.knowsHaftara?'<span class="haf">ה</span>':""}${m.family?`<span class="fam">${m.family}</span>`:""}`;
+      b.onclick=()=>{
+        const sv=getSh(currentSid);
+        const p=sv.present||[];
+        sv.present=p.includes(m.id)?p.filter(x=>x!==m.id):[...p,m.id];
+        setSh(currentSid,sv); render();
+      };
+      grid.appendChild(b);
+    });
+    pc.appendChild(grid);
+  }
+  root.appendChild(pc);
+
+  // Guests
+  const gc=el("div","card");
+  gc.innerHTML=`<div class="card-title">אורחים</div>
+    <div class="row">
+      <input type="text" id="g-name" placeholder="שם האורח" style="flex:1">
+      <select id="g-role">
+        <option value="ישראל">ישראל</option>
+        <option value="כהן">כהן</option>
+        <option value="לוי">לוי</option>
+      </select>
+    </div>
+    <label class="check-row"><input type="checkbox" id="g-haf"> יודע הפטרה</label>
+    <button class="btn btn-gold" style="margin-top:10px" id="g-add">הוסף אורח</button>`;
+  (sh.guests||[]).forEach(g=>{
+    const row=el("div","guest-row");
+    row.innerHTML=`<span>${g.name} — ${g.role}${g.knowsHaftara?" (הפטרה)":""}</span>`;
+    const rb=el("button","btn-danger","🗑️");
+    rb.onclick=()=>{ const sv=getSh(currentSid); sv.guests=(sv.guests||[]).filter(x=>x.id!==g.id); setSh(currentSid,sv); render(); };
+    row.appendChild(rb); gc.appendChild(row);
+  });
+  root.appendChild(gc);
+  $("g-add").onclick=()=>{
+    const name=$("g-name").value.trim(); if(!name)return;
+    const guest={id:"g_"+Date.now(),name,role:$("g-role").value,knowsHaftara:$("g-haf").checked,isGuest:true};
+    const sv=getSh(currentSid); sv.guests=[...(sv.guests||[]),guest]; setSh(currentSid,sv); render();
+  };
+
+  // Generate
+  const gb=el("button","btn-big","⚡ צור רשימת עליות אוטומטית");
+  gb.onclick=()=>{
+    const sv=getSh(currentSid);
+    const gIds=(sv.guests||[]).map(g=>g.id);
+    const res=suggest(currentSid,sv.present||[],gIds,manualOverrides);
+    sv.assignments=res.asgn; sv.reserves=res.reserves;
+    setSh(currentSid,sv); showToast("הרשימה נוצרה!"); render();
+  };
+  root.appendChild(gb);
+
+  // Result
+  const sv=getSh(currentSid);
+  const asgn=sv.assignments||{};
+  if(Object.keys(asgn).length>0){
+    const card=el("div","card");
+    card.innerHTML=`<div class="card-title">הצעת רשימה</div>`;
+    const grid=el("div","assign-grid");
+    const col1=el("div","assign-col"); col1.innerHTML=`<div class="col-title">עליות לתורה</div>`;
+    ALIYOT.forEach(r=>col1.appendChild(makeAssignRow(r,asgn[r],sv)));
+    grid.appendChild(col1);
+    const col2=el("div","assign-col"); col2.innerHTML=`<div class="col-title">כיבודים</div>`;
+    KIBBUDIM.forEach(k=>col2.appendChild(makeAssignRow(k,asgn[k],sv)));
+    grid.appendChild(col2);
+    card.appendChild(grid);
+    if((sv.reserves||[]).length>0){
+      const res=el("div","reserves");
+      res.innerHTML=`<strong>רזרבות: </strong>${(sv.reserves||[]).map(id=>getName(id)).join(" | ")}`;
+      card.appendChild(res);
+    }
+    const wb=el("button","btn btn-gold btn-full","📱 העתק לוואטסאפ");
+    wb.onclick=()=>{
+      let txt=`📋 *עליות לתורה - שבת ${fmtDate(currentSid)}*\n\n*עליות:*\n`;
+      ALIYOT.forEach(r=>txt+=`${r}: ${getName(asgn[r])}\n`);
+      txt+=`\n*כיבודים:*\n`;
+      KIBBUDIM.forEach(k=>txt+=`${k}: ${getName(asgn[k])}\n`);
+      if((sv.reserves||[]).length) txt+=`\n*רזרבות:* ${(sv.reserves||[]).map(id=>getName(id)).join(", ")}`;
+      navigator.clipboard.writeText(txt).then(()=>showToast("הועתק!")).catch(()=>showToast("שגיאה","err"));
+    };
+    card.appendChild(wb);
+    root.appendChild(card);
+  }
+}
+
+function makeAssignRow(role, assignedId, sh) {
+  const row=el("div","assign-row");
+  row.appendChild(el("span","assign-label",role));
+  const nameSpan=el("span","assign-name",getName(assignedId)+" ✏️");
+  nameSpan.onclick=()=>{
+    const allM=[...DB.members,...(sh.guests||[])];
+    const presentIds=new Set([...(sh.present||[]),...(sh.guests||[]).map(g=>g.id)]);
+    const sel=document.createElement("select"); sel.className="sm";
+    sel.innerHTML=`<option value="">— ללא —</option>`;
+    allM.filter(m=>presentIds.has(m.id)).forEach(m=>{
+      const o=document.createElement("option");
+      o.value=m.id; o.textContent=m.name+(m.isGuest?" (אורח)":"");
+      if(m.id===assignedId) o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.onchange=()=>{
+      manualOverrides[role]=sel.value||null;
+      const sv=getSh(currentSid);
+      const gIds=(sv.guests||[]).map(g=>g.id);
+      const res=suggest(currentSid,sv.present||[],gIds,manualOverrides);
+      sv.assignments=res.asgn; sv.reserves=res.reserves;
+      setSh(currentSid,sv); render();
+    };
+    row.replaceChild(sel,nameSpan); sel.focus();
+  };
+  row.appendChild(nameSpan);
+  return row;
+}
+
+// ── Tab 1: Actual ─────────────────────────────────────────────────────────
+function renderActual(root) {
+  const sids=Array.from({length:5},(_,i)=>{
+    const d=new Date(currentSid); d.setDate(d.getDate()-i*7); return getShabbatId(d);
+  });
+  let selSid=sids[0];
+
+  function build() {
+    root.innerHTML="";
+    const sh=getSh(selSid);
+    const allM=[...DB.members,...(sh.guests||[])];
+    const pc=el("div","card");
+    pc.innerHTML=`<div class="card-title">בחר שבת לעדכון</div>`;
+    const picker=el("div","shab-picker");
+    sids.forEach(sid=>{
+      const b=el("button","shab-btn"+(sid===selSid?" active":""),sid);
+      b.onclick=()=>{selSid=sid;build();};
+      picker.appendChild(b);
+    });
+    pc.appendChild(picker); root.appendChild(pc);
+
+    const asgn=sh.actual||sh.assignments||{};
+    const card=el("div","card");
+    card.innerHTML=`<div class="card-title">עולים בפועל — ${fmtDate(selSid)}</div>`;
+    const grid=el("div","assign-grid");
+
+    function makeActCol(roles,title){
+      const col=el("div","assign-col"); col.innerHTML=`<div class="col-title">${title}</div>`;
+      roles.forEach(r=>{
+        const row=el("div","assign-row");
+        row.innerHTML=`<span class="assign-label">${r}</span>`;
+        const sel=document.createElement("select"); sel.className="sm";
+        sel.innerHTML=`<option value="">— לא עלה —</option>`;
+        allM.forEach(m=>{
+          const o=document.createElement("option");
+          o.value=m.id; o.textContent=m.name+(m.isGuest?" (אורח)":"");
+          if(m.id===asgn[r]) o.selected=true;
+          sel.appendChild(o);
+        });
+        sel.onchange=()=>{ const sv=getSh(selSid); sv.actual=sv.actual||{}; sv.actual[r]=sel.value||null; setSh(selSid,sv); };
+        row.appendChild(sel); col.appendChild(row);
+      });
+      return col;
+    }
+
+    grid.appendChild(makeActCol(ALIYOT,"עליות לתורה"));
+    grid.appendChild(makeActCol(KIBBUDIM,"כיבודים"));
+    card.appendChild(grid);
+    const sb=el("button","btn btn-gold btn-full","💾 שמור עולים בפועל");
+    sb.onclick=()=>showToast("נשמר בהצלחה!");
+    card.appendChild(sb); root.appendChild(card);
+  }
+  build();
+}
+
+// ── Tab 2: Members ────────────────────────────────────────────────────────
+let editingId = null;
+function renderMembers(root) {
+  const editing = editingId ? DB.members.find(m=>m.id===editingId) : null;
+
+  const formCard=el("div","card");
+  formCard.innerHTML=`<div class="card-title">${editing?"עריכת מתפלל":"הוספת מתפלל"}</div>
+    <div class="row" style="margin-bottom:8px">
+      <input type="text" id="m-name" placeholder="שם מלא" style="flex:1" value="${editing?editing.name||"":""}">
+    </div>
+    <div class="row" style="margin-bottom:4px">
+      <select id="m-role" style="flex:1">
+        <option value="ישראל"${!editing||editing.role===ROLES.I?" selected":""}>ישראל</option>
+        <option value="כהן"${editing&&editing.role===ROLES.K?" selected":""}>כהן</option>
+        <option value="לוי"${editing&&editing.role===ROLES.L?" selected":""}>לוי</option>
+      </select>
+      <input type="text" id="m-family" placeholder="שם משפחה (לקשרי משפחה)" style="flex:1" value="${editing?editing.family||"":""}">
+    </div>
+    <label class="check-row"><input type="checkbox" id="m-haf"${editing&&editing.knowsHaftara?" checked":""}> יודע לקרוא הפטרה</label>
+    <div class="row" style="margin-top:10px">
+      <button class="btn btn-gold" id="m-save">${editing?"עדכן":"הוסף"}</button>
+      ${editing?`<button class="btn btn-sec" id="m-cancel">ביטול</button>`:""}
+    </div>
+    <div style="font-size:11px;color:#8890aa;margin-top:8px">💡 מתפללים עם אותו שם משפחה לא יעלו אחד אחרי השני</div>`;
+  root.appendChild(formCard);
+
+  $("m-save").onclick=()=>{
+    const name=$("m-name").value.trim(); if(!name)return;
+    const family=$("m-family").value.trim();
+    if(editingId){
+      DB.members=DB.members.map(m=>m.id===editingId?{...m,name,role:$("m-role").value,family,knowsHaftara:$("m-haf").checked}:m);
+      editingId=null; showToast("עודכן!");
+    } else {
+      DB.members.push({id:DB.nextId++,name,role:$("m-role").value,family,knowsHaftara:$("m-haf").checked});
+      showToast("נוסף!");
+    }
+    save(); render();
+  };
+  if(editingId) $("m-cancel").onclick=()=>{editingId=null;render();};
+
+  const listCard=el("div","card");
+  listCard.innerHTML=`<div class="card-title">רשימת מתפללים (${DB.members.length})</div>`;
+  if(DB.members.length===0) listCard.innerHTML+=`<div class="muted">אין מתפללים עדיין</div>`;
+
+  // Group by family
+  const families = {};
+  const noFamily = [];
+  DB.members.forEach(m=>{
+    if(m.family&&m.family.trim()){
+      const f=m.family.trim();
+      if(!families[f]) families[f]=[];
+      families[f].push(m);
+    } else { noFamily.push(m); }
+  });
+
+  const allGrouped = [...Object.entries(families).sort(), ...(noFamily.length?[["",noFamily]]:[])];
+  allGrouped.forEach(([fam,members])=>{
+    if(fam){
+      const fh=el("div","",`<div style="font-size:11px;color:#64b5f6;font-weight:700;padding:6px 0 2px">משפחת ${fam}</div>`);
+      listCard.appendChild(fh);
+    }
+    members.forEach(m=>{
+      const isRabbi=m.id===DB.settings.rabbiId;
+      const row=el("div","member-row");
+      row.innerHTML=`${roleTag(isRabbi?ROLES.R:m.role)}<span style="flex:1;font-weight:600">${m.name}</span>${isRabbi?'<span class="rabbi-badge">רב</span>':""}${m.knowsHaftara?'<span class="haf">הפטרה</span>':""}`;
+      const eb=el("button","btn-edit","✏️"); eb.onclick=()=>{editingId=m.id;render();};
+      const db=el("button","btn-danger","🗑️"); db.onclick=()=>{
+        if(confirm(`למחוק את ${m.name}?`)){
+          DB.members=DB.members.filter(x=>x.id!==m.id);
+          if(DB.settings.rabbiId===m.id) DB.settings.rabbiId=null;
+          save(); render();
+        }
+      };
+      row.appendChild(eb); row.appendChild(db); listCard.appendChild(row);
+    });
+  });
+  root.appendChild(listCard);
+}
+
+// ── Tab 3: Settings ───────────────────────────────────────────────────────
+function renderSettings(root) {
+  // Rabbi settings
+  const rc=el("div","card");
+  rc.innerHTML=`<div class="card-title">הגדרת רב בית הכנסת</div>`;
+
+  const rsel=document.createElement("select"); rsel.style.width="100%"; rsel.style.marginBottom="10px";
+  rsel.innerHTML=`<option value="">— אין רב מוגדר —</option>`;
+  DB.members.filter(m=>m.role===ROLES.I||m.role===ROLES.K||m.role===ROLES.L).forEach(m=>{
+    const o=document.createElement("option");
+    o.value=m.id; o.textContent=m.name;
+    if(m.id===DB.settings.rabbiId) o.selected=true;
+    rsel.appendChild(o);
+  });
+  rsel.onchange=()=>{ DB.settings.rabbiId=rsel.value||null; save(); showToast("נשמר!"); };
+  rc.appendChild(rsel);
+
+  const altLabel=el("label","check-row");
+  const altCb=document.createElement("input"); altCb.type="checkbox"; altCb.checked=DB.settings.rabbiAlternate;
+  altCb.onchange=()=>{ DB.settings.rabbiAlternate=altCb.checked; save(); showToast("נשמר!"); };
+  altLabel.appendChild(altCb);
+  altLabel.appendChild(document.createTextNode(" הרב עולה שבת כן שבת לא (שישי)"));
+  rc.appendChild(altLabel);
+  rc.appendChild(el("div","",`<div style="font-size:11px;color:#8890aa;margin-top:8px">הרב תמיד משובץ לעלייה שישי ולא מקבל כיבודים</div>`));
+  root.appendChild(rc);
+
+  // Backup / Restore
+  const bc=el("div","card");
+  bc.innerHTML=`<div class="card-title">גיבוי ושחזור נתונים</div>
+    <div style="font-size:13px;color:#8890aa;margin-bottom:10px">לפני כל עדכון של האפליקציה — ייצא את הנתונים. אחרי העדכון — ייבא חזרה.</div>`;
+
+  const exportBtn=el("button","btn btn-green","📤 ייצא נתונים (גיבוי)");
+  exportBtn.onclick=()=>{
+    const json=JSON.stringify(DB,null,2);
+    const blob=new Blob([json],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url; a.download="shkoyech-backup.json"; a.click();
+    URL.revokeObjectURL(url);
+    showToast("הנתונים יוצאו!");
+  };
+
+  const importBtn=el("button","btn btn-blue","📥 ייבא נתונים (שחזור)");
+  const fileInput=document.createElement("input"); fileInput.type="file"; fileInput.accept=".json"; fileInput.style.display="none";
+  fileInput.onchange=e=>{
+    const file=e.target.files[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try {
+        const parsed=JSON.parse(ev.target.result);
+        if(!parsed.members) throw new Error("קובץ לא תקין");
+        DB=parsed; save(); showToast("הנתונים יובאו בהצלחה!"); render();
+      } catch(err){ showToast("שגיאה בייבוא הקובץ","err"); }
+    };
+    reader.readAsText(file);
+  };
+  importBtn.onclick=()=>fileInput.click();
+
+  const brow=el("div","backup-row");
+  brow.appendChild(exportBtn); brow.appendChild(importBtn); brow.appendChild(fileInput);
+  bc.appendChild(brow);
+  root.appendChild(bc);
+}
+
+// ── Tab 4: Stats ──────────────────────────────────────────────────────────
+function renderStats(root) {
+  const sids=Object.keys(DB.shabbatot).sort();
+  const stats=DB.members.map(m=>{
+    let aliyot=0,kibud=0,attended=0;
+    sids.forEach(sid=>{
+      const sh=DB.shabbatot[sid];
+      if(!sh||(!(sh.present||[]).includes(m.id)))return;
+      attended++;
+      const act=sh.actual||{};
+      ALIYOT.forEach(r=>{if(act[r]===m.id)aliyot++;});
+      KIBBUDIM.forEach(k=>{if(act[k]===m.id)kibud++;});
+    });
+    return {...m,aliyot,kibud,attended,rate:attended>0?Math.round(aliyot/attended*100):0};
+  }).sort((a,b)=>b.aliyot-a.aliyot);
+
+  const sc=el("div","card");
+  sc.innerHTML=`<div class="card-title">סיכום כללי</div><div class="row" style="gap:10px">
+    <div class="stat-box"><div class="stat-num">${sids.length}</div><div class="stat-label">שבתות</div></div>
+    <div class="stat-box"><div class="stat-num">${DB.members.length}</div><div class="stat-label">מתפללים</div></div>
+    <div class="stat-box"><div class="stat-num">${DB.members.filter(m=>m.knowsHaftara).length}</div><div class="stat-label">יודעי הפטרה</div></div>
+  </div>`;
+  root.appendChild(sc);
+
+  const tc=el("div","card");
+  tc.innerHTML=`<div class="card-title">סטטיסטיקות לפי מתפלל</div>`;
+  const wrap=el("div",""); wrap.style.overflowX="auto";
+  let html=`<table><thead><tr><th>שם</th><th>משפחה</th><th>נוכחות</th><th>עליות</th><th>כיבודים</th><th>%</th></tr></thead><tbody>`;
+  stats.forEach(m=>{
+    const isRabbi=m.id===DB.settings.rabbiId;
+    html+=`<tr>
+      <td>${m.name}${isRabbi?' <span class="rabbi-badge">רב</span>':""}</td>
+      <td>${m.family?`<span class="fam">${m.family}</span>`:"—"}</td>
+      <td>${m.attended}</td>
+      <td><strong>${m.aliyot}</strong></td>
+      <td>${m.kibud}</td>
+      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(m.rate,100)}%"></div></div><span>${m.rate}%</span></div></td>
+    </tr>`;
+  });
+  html+=`</tbody></table>`;
+  if(!stats.length) html=`<div class="muted">אין נתונים עדיין</div>`;
+  wrap.innerHTML=html; tc.appendChild(wrap); root.appendChild(tc);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+// Migrate old data if needed
+if (!DB.settings) DB.settings = { rabbiId: null, rabbiAlternate: true };
+render();
+</script>
+</body>
+</html>.haf { font-size: 10px; background: #3a2a00; color: #d4a843; border-radius: 8px; padding: 1px 5px; font-weight: 700; }
 .assign-grid { display: flex; gap: 10px; flex-wrap: wrap; }
 .assign-col { flex: 1; min-width: 180px; }
 .col-title { font-size: 11px; color: #d4a843; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
